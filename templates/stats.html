@@ -5,51 +5,119 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Analytics Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   </head>
   <body>
-    <header class="header">
-      <div class="container">
-        <h1>Analytics Dashboard</h1>
-        <p>Total clicks: <strong>{{ total_clicks }}</strong></p>
+    <header class="header" style="padding-top: 2rem; padding-bottom: 0;">
+      <div class="container" style="padding-bottom: 0; padding-top: 2rem;">
+        <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem; background: var(--primary-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;">Analytics Dashboard</h1>
+        <p style="color: var(--text-muted);">Manage and monitor your shortened links seamlessly.</p>
       </div>
     </header>
 
-    <main class="container">
-      <section class="card">
-        <div class="link-row">
-          <a class="secondary" href="{{ url_for('index') }}">Create a new short link</a>
+    <main class="container" style="padding-top: 2rem;">
+
+      <!-- Flash messages if any exist from /toggle redirect -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-container">
+            {% for category, message in messages %}
+              <div class="flash flash-{{ category }}">
+                <i class="fa-solid {% if category == 'success' %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i>
+                <span>{{ message }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <section class="glass-card">
+        <div class="link-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+          <a class="btn" style="width: auto; margin-top: 0; background: rgba(255,255,255,0.1); box-shadow: none;" href="{{ url_for('index') }}"><i class="fa-solid fa-arrow-left"></i> Back to Home</a>
+          <a class="btn" style="width: auto; margin-top: 0;" href="{{ url_for('index') }}"><i class="fa-solid fa-plus"></i> Create Link</a>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-link"></i></div>
+            <div class="stat-info">
+              <h3>Total Links</h3>
+              <p>{{ total_links }}</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-mouse-pointer"></i></div>
+            <div class="stat-info">
+              <h3>Total Clicks</h3>
+              <p>{{ total_clicks }}</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-fire"></i></div>
+            <div class="stat-info">
+              <h3>Most Active Link</h3>
+              <p title="{{ most_active.original_url if most_active else 'N/A' }}">
+                {% if most_active %}
+                  <a href="{{ url_for('redirect_short', code=most_active.custom_alias or most_active.short_code) }}" target="_blank" style="color: white; text-decoration: underline; font-size: 1rem;">
+                    {{ most_active.custom_alias or most_active.short_code }}
+                  </a>
+                {% else %}
+                  -
+                {% endif %}
+              </p>
+            </div>
+          </div>
         </div>
 
         {% if urls %}
-        <table class="stats-table">
-          <thead>
-            <tr>
-              <th>Short URL</th>
-              <th>Original URL</th>
-              <th>Clicks</th>
-              <th>Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for url in urls %}
-            <tr>
-              <td>
-                <a
-                  href="{{ url_for('redirect_short', code=url.custom_alias or url.short_code) }}"
-                  target="_blank"
-                  rel="noopener"
-                  >{{ url.custom_alias or url.short_code }}</a
-                >
-              </td>
-              <td>
-                <a href="{{ url.original_url }}" target="_blank" rel="noopener">{{ url.original_url }}</a>
-              </td>
-              <td>{{ url.clicks }}</td>
-              <td>{{ url.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+        <div style="overflow-x: auto;">
+          <table class="stats-table">
+            <thead>
+              <tr>
+                <th>Short URL</th>
+                <th>Original URL</th>
+                <th>Clicks</th>
+                <th>Created</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for url in urls %}
+              <tr>
+                <td>
+                  <a
+                    href="{{ url_for('redirect_short', code=url.custom_alias or url.short_code) }}"
+                    target="_blank"
+                    rel="noopener"
+                    style="font-weight: 600;"
+                    >{{ url.custom_alias or url.short_code }}</a
+                  >
+                </td>
+                <td class="original-url-cell">
+                  <a href="{{ url.original_url }}" target="_blank" rel="noopener" title="{{ url.original_url }}">{{ url.original_url }}</a>
+                </td>
+                <td><strong>{{ url.clicks }}</strong></td>
+                <td style="white-space: nowrap; color: var(--text-muted);">{{ url.created_at.strftime('%b %d, %Y, %I:%M %p') }}</td>
+                <td>
+                  {% if url.is_active %}
+                    <span class="badge badge-active">Active</span>
+                  {% else %}
+                    <span class="badge badge-disabled">Disabled</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <form action="{{ url_for('toggle_status', id=url.id) }}" method="POST" style="margin:0;">
+                    <button type="submit" class="action-btn {% if url.is_active %}active{% else %}disabled{% endif %}" title="{% if url.is_active %}Disable Link{% else %}Enable Link{% endif %}">
+                      <i class="fa-solid {% if url.is_active %}fa-toggle-on{% else %}fa-toggle-off{% endif %}"></i>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
         {% else %}
         <p class="muted">No short URLs have been created yet.</p>
         {% endif %}

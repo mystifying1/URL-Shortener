@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Link Deactivated</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  </head>
+  <body>
+    <div class="background-anim"></div>
+    <main class="container" style="display: flex; justify-content: center; align-items: center; min-height: 80vh;">
+      <section class="glass-card" style="text-align: center; max-width: 500px; margin: 0 auto; padding: 4rem 2rem;">
+        <i class="fa-solid fa-ban" style="font-size: 4rem; color: var(--error-color); margin-bottom: 1.5rem;"></i>
+        <h1 style="font-size: 2rem; margin-bottom: 1rem; color: white;">Link Deactivated</h1>
+        <p style="color: var(--text-muted); font-size: 1.1rem; margin-bottom: 2rem; line-height: 1.5;">
+          This link has been deactivated by the administrator and is no longer available.
+        </p>
+      </section>
+    </main>
+    <footer class="footer">
+      <p>Built with Flask • Base62 encoding • SQLite</p>
+    </footer>
+  </body>
+</html>

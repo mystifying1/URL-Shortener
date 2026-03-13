@@ -16,6 +16,7 @@ class URL(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     last_click_at = db.Column(db.DateTime, nullable=True)
     clicks = db.Column(db.Integer, nullable=False, default=0)
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
 
     def __repr__(self):
         return f"<URL id={self.id} short_code={self.short_code} custom_alias={self.custom_alias}>"

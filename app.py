@@ -75,6 +75,12 @@ def create_app() -> Flask:
 # This creates the database tables automatically within the app context
     with app.app_context():
         db.create_all()
+        # Add is_active column if it doesn't exist for older databases
+        try:
+            db.session.execute(db.text("ALTER TABLE urls ADD COLUMN is_active BOOLEAN DEFAULT 1"))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
 
     @app.route("/", methods=["GET", "POST"])
     def index():
@@ -148,7 +154,26 @@ def create_app() -> Flask:
     def stats():
         urls = URL.query.order_by(URL.created_at.desc()).all()
         total_clicks = sum(url.clicks for url in urls)
-        return render_template("stats.html", urls=urls, total_clicks=total_clicks)
+        total_links = len(urls)
+        most_active_link = max(urls, key=lambda u: u.clicks) if urls else None
+        
+        return render_template(
+            "stats.html", 
+            urls=urls, 
+            total_clicks=total_clicks,
+            total_links=total_links,
+            most_active=most_active_link
+        )
+
+    @app.route("/toggle/<int:id>", methods=["POST"])
+    def toggle_status(id):
+        url_obj = URL.query.get_or_404(id)
+        url_obj.is_active = not url_obj.is_active
+        db.session.commit()
+        
+        status_text = "enabled" if url_obj.is_active else "disabled"
+        flash(f"Link {status_text} successfully.", "success")
+        return redirect(url_for("stats"))
 
     @app.route("/<path:code>")
     def redirect_short(code: str):
@@ -159,6 +184,9 @@ def create_app() -> Flask:
 
         if not url_obj:
             return render_template("404.html"), 404
+
+        if not getattr(url_obj, 'is_active', True):
+            return render_template("deactivated.html"), 403
 
         url_obj.clicks += 1
         url_obj.last_click_at = datetime.now(timezone.utc)
