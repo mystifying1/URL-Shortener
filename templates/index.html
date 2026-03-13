@@ -1,68 +1,164 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>URL Shortener</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-  </head>
-  <body>
-    <header class="header">
-      <div class="container">
-        <h1>URL Shortener</h1>
-        <p>Shorten links, create custom aliases, and track clicks.</p>
-      </div>
-    </header>
 
-    <main class="container">
-      {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-      <div class="flash-container">
-        {% for category, message in messages %}
-        <div class="flash flash-{{ category }}">{{ message }}</div>
-        {% endfor %}
-      </div>
-      {% endif %}
-      {% endwith %}
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>URL Shortener</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
 
-      <section class="card">
-        <form method="POST" novalidate>
-          <label for="original_url">Enter the URL to shorten</label>
-          <input
-            id="original_url"
-            name="original_url"
-            type="url"
-            placeholder="https://example.com"
-            required
-          />
+<body>
+  <!-- Background Gradient Animation -->
+  <div class="background-anim"></div>
 
-          <label for="custom_alias">Custom alias (optional)</label>
-          <input
-            id="custom_alias"
-            name="custom_alias"
-            type="text"
-            placeholder="e.g., my-link"
-            maxlength="64"
-          />
+  <!-- Navigation / Top bar -->
+  <nav class="navbar">
+    <div class="navbar-container">
+      <a href="/" class="brand"><i class="fa-solid fa-link"></i> ShortLink</a>
+      <a href="{{ url_for('stats') }}" class="nav-link"><i class="fa-solid fa-chart-line"></i> View Stats</a>
+    </div>
+  </nav>
 
-          <button type="submit" class="btn">Shorten</button>
-        </form>
-
-        {% if short_url %}
-        <div class="result">
-          <p>Your short link:</p>
-          <a href="{{ short_url }}" target="_blank" rel="noopener">{{ short_url }}</a>
-        </div>
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-container" id="flash-container">
+      {% for category, message in messages %}
+      <div class="flash flash-{{ category }}">
+        {% if category == 'success' %}
+        <i class="fa-solid fa-check-circle"></i>
+        {% elif category == 'error' %}
+        <i class="fa-solid fa-exclamation-circle"></i>
+        {% else %}
+        <i class="fa-solid fa-info-circle"></i>
         {% endif %}
+        <span>{{ message }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
 
-        <div class="link-row">
-          <a class="secondary" href="{{ url_for('stats') }}">View analytics dashboard</a>
+    <div class="header-text">
+      <h1>Shorten Your Links</h1>
+      <p>Create sleek, memorable aliases and track your clicks with ease.</p>
+    </div>
+
+    <section class="glass-card">
+      <form method="POST" id="shorten-form" novalidate>
+        <div class="form-group">
+          <label for="original_url">Destination URL</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-globe input-icon"></i>
+            <input id="original_url" name="original_url" type="url" placeholder="https://example.com/very-long-url"
+              required />
+          </div>
         </div>
-      </section>
-    </main>
 
-    <footer class="footer">
-      <p>Built with Flask • Base62 encoding • SQLite</p>
-    </footer>
-  </body>
+        <div class="form-group">
+          <label for="custom_alias">Custom Alias (Optional)</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-pen input-icon"></i>
+            <input id="custom_alias" name="custom_alias" type="text" placeholder="e.g., my-campaign" maxlength="64" />
+          </div>
+        </div>
+
+        <button type="submit" class="btn" id="submit-btn">
+          <span class="btn-text">Shorten Now <i class="fa-solid fa-arrow-right"></i></span>
+          <span class="spinner" style="display: none;"><i class="fa-solid fa-spinner fa-spin"></i> Processing...</span>
+        </button>
+      </form>
+    </section>
+
+    {% if short_url %}
+    <div class="success-wrapper">
+      <div class="success-card glass-card pop-up" id="success-card">
+        <div class="success-header">
+          <i class="fa-solid fa-check-circle text-success"></i>
+          <h3>Here is your short link!</h3>
+        </div>
+        <div class="link-display">
+          <a href="{{ short_url }}" target="_blank" rel="noopener" id="shortened-link">{{ short_url }}</a>
+          <button class="btn-icon" id="copy-btn" title="Copy to clipboard" type="button">
+            <i class="fa-regular fa-copy"></i>
+          </button>
+          <div class="tooltip" id="copy-tooltip">Copied!</div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </main>
+
+  <footer class="footer">
+    <p>Built with Flask <i class="fa-solid fa-heart" style="color: #ff4757;"></i> Modern UI</p>
+  </footer>
+
+  <script>
+    // Form submission spinner interaction
+    const form = document.getElementById('shorten-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const btnText = document.querySelector('.btn-text');
+    const spinner = document.querySelector('.spinner');
+
+    if (form) {
+      form.addEventListener('submit', () => {
+        // Verify URL is not empty to avoid showing spinner on empty form error
+        const originalUrl = document.getElementById('original_url').value;
+        if (originalUrl.trim() !== '') {
+          btnText.style.display = 'none';
+          spinner.style.display = 'inline-block';
+          submitBtn.classList.add('loading');
+        }
+      });
+    }
+
+    // Copy to clipboard interaction
+    const copyBtn = document.getElementById('copy-btn');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', async () => {
+        const shortUrl = document.getElementById('shortened-link').href;
+        try {
+          await navigator.clipboard.writeText(shortUrl);
+          const tooltip = document.getElementById('copy-tooltip');
+          const icon = copyBtn.querySelector('i');
+
+          // Change icon briefly
+          icon.classList.remove('fa-copy', 'fa-regular');
+          icon.classList.add('fa-check', 'fa-solid');
+          icon.style.color = 'var(--success-color)';
+
+          tooltip.classList.add('show');
+
+          setTimeout(() => {
+            tooltip.classList.remove('show');
+            // Revert icon
+            icon.classList.remove('fa-check', 'fa-solid');
+            icon.style.color = '#fff';
+            icon.classList.add('fa-copy', 'fa-regular');
+          }, 2000);
+        } catch (err) {
+          console.error('Failed to copy text: ', err);
+        }
+      });
+    }
+
+    // Automatically hide flash messages after 5 seconds
+    const flashContainer = document.getElementById('flash-container');
+    if (flashContainer) {
+      setTimeout(() => {
+        flashContainer.style.opacity = '0';
+        setTimeout(() => flashContainer.remove(), 500);
+      }, 5000);
+    }
+  </script>
+</body>
+
 </html>
