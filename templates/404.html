@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Not Found</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="container">
+        <h1>404 — Not Found</h1>
+        <p>The short URL you requested does not exist.</p>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="card">
+        <div class="link-row">
+          <a class="secondary" href="{{ url_for('index') }}">Create a new short link</a>
+          <a class="secondary" href="{{ url_for('stats') }}">View analytics dashboard</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>Built with Flask • Base62 encoding • SQLite</p>
+    </footer>
+  </body>
+</html>

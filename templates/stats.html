@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Analytics Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="container">
+        <h1>Analytics Dashboard</h1>
+        <p>Total clicks: <strong>{{ total_clicks }}</strong></p>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="card">
+        <div class="link-row">
+          <a class="secondary" href="{{ url_for('index') }}">Create a new short link</a>
+        </div>
+
+        {% if urls %}
+        <table class="stats-table">
+          <thead>
+            <tr>
+              <th>Short URL</th>
+              <th>Original URL</th>
+              <th>Clicks</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for url in urls %}
+            <tr>
+              <td>
+                <a
+                  href="{{ url_for('redirect_short', code=url.custom_alias or url.short_code) }}"
+                  target="_blank"
+                  rel="noopener"
+                  >{{ url.custom_alias or url.short_code }}</a
+                >
+              </td>
+              <td>
+                <a href="{{ url.original_url }}" target="_blank" rel="noopener">{{ url.original_url }}</a>
+              </td>
+              <td>{{ url.clicks }}</td>
+              <td>{{ url.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="muted">No short URLs have been created yet.</p>
+        {% endif %}
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>Built with Flask • Base62 encoding • SQLite</p>
+    </footer>
+  </body>
+</html>
